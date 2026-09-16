@@ -27,7 +27,7 @@ export default function TeamPage() {
           const load = loadForPerson(state, p.id);
           const owned = state.campaigns.filter((c) => c.ownerId === p.id);
           return (
-            <article key={p.id} className="rounded-xl border bg-card p-4">
+            <article key={p.id} className="rounded-2xl border bg-card p-5 shadow-sm">
               <PersonChip state={state} id={p.id} className="text-base font-medium" />
               <p className="mt-1 text-sm text-muted-foreground">{p.role}</p>
               <p className="mt-3 text-sm">
@@ -46,7 +46,7 @@ export default function TeamPage() {
       <section className="max-w-md rounded-xl border bg-card p-5">
         <h2 className="font-heading text-2xl">Studio name</h2>
         <p className="mb-3 text-sm text-muted-foreground">
-          This desk lives in the browser. Rename it to your company.
+          This is Akaai Spaces. Rename only if you need a different lockup.
         </p>
         <form
           className="flex gap-2"
