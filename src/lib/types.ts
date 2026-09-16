@@ -140,6 +140,43 @@ export type Task = {
   campaignId?: string;
 };
 
+export const VIDEO_STATUSES = [
+  "need-files",
+  "with-editor",
+  "in-edit",
+  "final-ready",
+  "ready-to-post",
+  "posted",
+] as const;
+export type VideoStatus = (typeof VIDEO_STATUSES)[number];
+
+export type FileKind = "source" | "final";
+
+export type FileAsset = {
+  id: string;
+  name: string;
+  size: number;
+  mime: string;
+  kind: FileKind;
+  uploadedBy: string;
+  uploadedAt: string;
+};
+
+export type VideoJob = {
+  id: string;
+  title: string;
+  brief: string;
+  clientId?: string;
+  campaignId?: string;
+  status: VideoStatus;
+  dueDate: string;
+  platforms: Channel[];
+  editorId: string;
+  posterId: string;
+  sourceFiles: FileAsset[];
+  finalFiles: FileAsset[];
+};
+
 export type Recap = {
   id: string;
   title: string;
@@ -165,6 +202,7 @@ export type StudioState = {
   deliverables: Deliverable[];
   tasks: Task[];
   recaps: Recap[];
+  videoJobs: VideoJob[];
 };
 
 export type ComposerKind =
@@ -174,4 +212,5 @@ export type ComposerKind =
   | "deliverable"
   | "recap"
   | "milestone"
-  | "person";
+  | "person"
+  | "video";

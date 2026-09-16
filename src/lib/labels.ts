@@ -5,6 +5,7 @@ import type {
   RecapType,
   TaskPriority,
   TaskStatus,
+  VideoStatus,
 } from "./types";
 
 export const campaignStatusLabel: Record<CampaignStatus, string> = {
@@ -51,4 +52,13 @@ export const recapTypeLabel: Record<RecapType, string> = {
   weekly: "Weekly recap",
   campaign: "Campaign recap",
   "client-meeting": "Client meeting",
+};
+
+export const videoStatusLabel: Record<VideoStatus, string> = {
+  "need-files": "Waiting for footage",
+  "with-editor": "Ready for editor",
+  "in-edit": "In edit",
+  "final-ready": "Final uploaded",
+  "ready-to-post": "Ready to post",
+  posted: "Posted",
 };

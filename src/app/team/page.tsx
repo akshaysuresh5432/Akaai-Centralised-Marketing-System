@@ -19,7 +19,7 @@ export default function TeamPage() {
       <PageHeader
         kicker="Team"
         title="Who is on the floor"
-        description="Workload is open tasks plus assets that are not live yet. Use Working as in the header so each person sees their own today."
+        description="Aisha is video editor. Sam posts and schedules. Use Working as so each person sees their own queue."
         actions={<Button onClick={() => setOpen(true)}>Add teammate</Button>}
       />
       <div className="mb-8 grid gap-3 md:grid-cols-2">

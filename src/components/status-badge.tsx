@@ -6,6 +6,7 @@ import {
   priorityLabel,
   recapTypeLabel,
   taskStatusLabel,
+  videoStatusLabel,
 } from "@/lib/labels";
 import type {
   CampaignStatus,
@@ -14,6 +15,7 @@ import type {
   RecapType,
   TaskPriority,
   TaskStatus,
+  VideoStatus,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +47,22 @@ const tone: Record<string, string> = {
   weekly: "bg-sky-100 text-sky-950",
   campaign: "bg-violet-100 text-violet-950",
   "client-meeting": "bg-amber-100 text-amber-950",
+  "need-files": "bg-stone-200 text-stone-800",
+  "with-editor": "bg-sky-100 text-sky-950",
+  "in-edit": "bg-amber-100 text-amber-950",
+  "final-ready": "bg-violet-100 text-violet-950",
+  "ready-to-post": "bg-emerald-100 text-emerald-950",
+  posted: "bg-stone-200 text-stone-700",
+};
+
+const labels = {
+  campaign: (v: string) => campaignStatusLabel[v as CampaignStatus],
+  client: (v: string) => clientStatusLabel[v as ClientStatus],
+  task: (v: string) => taskStatusLabel[v as TaskStatus],
+  priority: (v: string) => priorityLabel[v as TaskPriority],
+  deliverable: (v: string) => deliverableStatusLabel[v as DeliverableStatus],
+  recap: (v: string) => recapTypeLabel[v as RecapType],
+  video: (v: string) => videoStatusLabel[v as VideoStatus],
 };
 
 export function StatusBadge({
@@ -52,32 +70,14 @@ export function StatusBadge({
   kind,
 }: {
   value: string;
-  kind:
-    | "campaign"
-    | "client"
-    | "task"
-    | "priority"
-    | "deliverable"
-    | "recap";
+  kind: keyof typeof labels;
 }) {
-  const label =
-    kind === "campaign"
-      ? campaignStatusLabel[value as CampaignStatus]
-      : kind === "client"
-        ? clientStatusLabel[value as ClientStatus]
-        : kind === "task"
-          ? taskStatusLabel[value as TaskStatus]
-          : kind === "priority"
-            ? priorityLabel[value as TaskPriority]
-            : kind === "deliverable"
-              ? deliverableStatusLabel[value as DeliverableStatus]
-              : recapTypeLabel[value as RecapType];
   return (
     <Badge
       variant="secondary"
       className={cn("border-0 font-medium", tone[value] ?? "bg-muted")}
     >
-      {label}
+      {labels[kind](value)}
     </Badge>
   );
 }

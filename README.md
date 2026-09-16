@@ -1,42 +1,28 @@
-# Relay Desk
+# Akaai Spaces desk
 
-The operating desk for a marketing studio. Campaigns, the content calendar, internal deadlines, approvals, and recaps live in one place so the whole team can see what is running and what happens on any given day.
+The operating desk for **Akaai Spaces**. Campaigns, video handoff, the calendar, deadlines, and recaps live in one place so the studio — including work-from-home staff — can see what is running.
 
-This repo ships with a worked example studio (Harbor & Pine, Solstice Athletics, Brightwell Dental) so you can click around immediately. Rename the studio on the Team page. The desk is **live**: everyone on the same URL sees the same campaigns, calendar, and recaps. Pick yourself with **Working as** — that choice stays on your device.
+The desk is **live**: everyone on the same URL sees the same work. Pick yourself with **Working as**.
 
-## What it covers
+## Video handoff
 
-- **Today** — run of show: publishes, deadlines, campaign marks, your work, overdue items, close-of-day recap
-- **Calendar** — month and week views of every go-live and due date
-- **Campaigns** — planning through in-market, with a timeline of milestones, assets, work, and recaps
-- **Work** — kanban for the floor (to do, doing, blocked, done)
-- **Approvals** — internal and client review queue
-- **Recaps** — daily close, weekly, campaign, and client meeting notes
-- **Clients** — the companies you market, with brand notes
-- **Team** — roster and workload; switch “Working as” to see another person’s desk
+1. Anyone uploads raw footage on a video job.
+2. The video editor (Aisha in the sample roster) downloads it, cuts, and uploads the final.
+3. Posting & scheduling (Sam) downloads the final and puts it on Instagram, TikTok, YouTube, and the rest.
 
-Use **Add** to create a campaign, asset, task, milestone, recap, client, or teammate.
+## What else it covers
+
+- **Today** — run of show plus your video jobs
+- **Calendar** — publishes and due dates
+- **Campaigns** — planning through in-market, with timelines
+- **Work** — to do / doing / blocked / done
+- **Approvals**, **Recaps**, **Clients**, **Team**
 
 ## Run locally
 
 ```bash
 npm install
-npm run dev -- --port 43211
+npm run dev
 ```
 
 Open [http://localhost:43211](http://localhost:43211).
-
-## Share with the team
-
-Work-from-home staff need a public HTTPS URL. From this project, use **Publish** (Vercel) for a permanent link. Until that is connected, you can also run the app on a machine that stays on and expose it:
-
-```bash
-npm run build
-npm start -- --hostname 0.0.0.0 --port 43211
-```
-
-Everyone who opens that URL is on the same live desk (`/api/studio`).
-
-## Stack
-
-Next.js, TypeScript, Tailwind, shadcn/ui. Shared desk data lives on the server (`data/studio.json` via `/api/studio`). Restore the demo from the Team page if you want the sample studio back.

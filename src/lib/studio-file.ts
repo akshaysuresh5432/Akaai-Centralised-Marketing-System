@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { seedState } from "@/lib/seed";
+import { normalizeStudio } from "@/lib/normalize";
 import type { StudioState } from "@/lib/types";
 
 const filePath = path.join(
@@ -16,7 +17,7 @@ async function ensureDir() {
 export async function readStudio(): Promise<StudioState> {
   try {
     const raw = await readFile(filePath, "utf8");
-    return JSON.parse(raw) as StudioState;
+    return normalizeStudio(JSON.parse(raw) as StudioState);
   } catch {
     const seed = seedState();
     await ensureDir();

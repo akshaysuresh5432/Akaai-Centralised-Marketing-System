@@ -17,7 +17,7 @@ export function PageHeader({
             {kicker}
           </p>
         )}
-        <h1 className="font-heading text-4xl tracking-tight md:text-5xl">
+        <h1 className="font-heading text-[2.4rem] leading-[1.05] tracking-tight md:text-5xl">
           {title}
         </h1>
         {description && (
@@ -37,7 +37,7 @@ export function EmptyState({
   body: string;
 }) {
   return (
-    <div className="rounded-xl border border-dashed p-8 text-center">
+    <div className="rounded-2xl border border-dashed bg-card/60 p-8 text-center">
       <p className="font-medium">{title}</p>
       <p className="mt-1 text-sm text-muted-foreground">{body}</p>
     </div>

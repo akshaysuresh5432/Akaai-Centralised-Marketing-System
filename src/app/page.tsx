@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { DayRun } from "@/components/day-run";
 import { PageHeader } from "@/components/page-header";
 import { PersonChip } from "@/components/person-chip";
@@ -33,18 +33,12 @@ export default function TodayPage() {
   const todayRecap = state.recaps.find(
     (r) => r.date === iso && r.type === "daily-close"
   );
-  const greeting = useMemo(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 17) return "Good afternoon";
-    return "Good evening";
-  }, []);
 
   return (
     <div>
       <PageHeader
         kicker="Today"
-        title={`${greeting}, ${me?.name.split(" ")[0] ?? "team"}`}
+        title={`Hello, ${me?.name.split(" ")[0] ?? "team"}`}
         description={formatDay(iso)}
         actions={
           <>
@@ -78,6 +72,63 @@ export default function TodayPage() {
           hint="Internal or client"
         />
       </div>
+
+      <section className="mb-10 grid gap-3 md:grid-cols-2">
+        <Link
+          href="/video"
+          className="rounded-2xl border bg-card p-5 shadow-sm transition hover:border-foreground/20"
+        >
+          <p className="text-sm text-muted-foreground">Video desk</p>
+          <h2 className="font-heading mt-1 text-2xl">Editor & posting</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Upload footage for Aisha. When the cut is back, Sam downloads it for
+            Instagram and every other channel.
+          </p>
+          <p className="mt-3 text-sm">
+            {(state.videoJobs ?? []).filter((j) =>
+              ["need-files", "with-editor", "in-edit"].includes(j.status)
+            ).length}{" "}
+            in edit ·{" "}
+            {(state.videoJobs ?? []).filter((j) =>
+              ["final-ready", "ready-to-post"].includes(j.status)
+            ).length}{" "}
+            ready to post
+          </p>
+        </Link>
+        <div className="rounded-2xl border bg-card p-5 shadow-sm">
+          <p className="text-sm text-muted-foreground">Your video jobs</p>
+          <ul className="mt-3 grid gap-2">
+            {(state.videoJobs ?? [])
+              .filter(
+                (j) =>
+                  j.editorId === state.currentUserId ||
+                  j.posterId === state.currentUserId
+              )
+              .slice(0, 3)
+              .map((j) => (
+                <li key={j.id}>
+                  <Link
+                    href={`/video/${j.id}`}
+                    className="flex items-center justify-between gap-2 text-sm"
+                  >
+                    <span className="truncate">{j.title}</span>
+                    <StatusBadge kind="video" value={j.status} />
+                  </Link>
+                </li>
+              ))}
+            {(state.videoJobs ?? []).filter(
+              (j) =>
+                j.editorId === state.currentUserId ||
+                j.posterId === state.currentUserId
+            ).length === 0 && (
+              <li className="text-sm text-muted-foreground">
+                Nothing assigned to you. Switch Working as to the editor or
+                poster, or open the video desk.
+              </li>
+            )}
+          </ul>
+        </div>
+      </section>
 
       {iso === today && late.length > 0 && (
         <section className="mb-8 rounded-xl border border-rose-200 bg-rose-50 p-4">

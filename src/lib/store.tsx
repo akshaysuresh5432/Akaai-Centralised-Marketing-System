@@ -16,12 +16,16 @@ import type {
   Campaign,
   Client,
   Deliverable,
+  FileAsset,
   Milestone,
   Recap,
   StudioState,
   Task,
   TeamMember,
+  VideoJob,
+  VideoStatus,
 } from "./types";
+import { normalizeStudio } from "./normalize";
 
 const USER_KEY = "relay-desk-user";
 
@@ -43,6 +47,10 @@ type StudioContextValue = {
   setTaskStatus: (id: string, status: Task["status"]) => void;
   upsertRecap: (recap: Omit<Recap, "id"> & { id?: string }) => string;
   upsertPerson: (person: Omit<TeamMember, "id"> & { id?: string }) => string;
+  upsertVideoJob: (job: Omit<VideoJob, "id" | "sourceFiles" | "finalFiles"> & { id?: string }) => string;
+  setVideoJobStatus: (id: string, status: VideoStatus) => void;
+  attachFile: (jobId: string, file: FileAsset) => void;
+  removeFile: (jobId: string, fileId: string) => void;
   resetDemo: () => void;
 };
 
@@ -96,7 +104,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const remote = (await res.json()) as StudioState;
           if (!cancelled) {
             skipPush.current = true;
-            setState(withUser(remote, userId));
+            setState(withUser(normalizeStudio(remote), userId));
             setLive(true);
           }
         } else {
@@ -107,7 +115,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const raw = localStorage.getItem(STORAGE_KEY);
           if (raw && !cancelled) {
             skipPush.current = true;
-            setState(withUser(JSON.parse(raw) as StudioState, userId));
+            setState(
+              withUser(normalizeStudio(JSON.parse(raw) as StudioState), userId)
+            );
           }
         } catch {
           // seed
@@ -126,7 +136,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const local = stateRef.current;
         if ((remote.updatedAt ?? 0) > (local.updatedAt ?? 0)) {
           skipPush.current = true;
-          setState(withUser(remote, local.currentUserId));
+          setState(withUser(normalizeStudio(remote), local.currentUserId));
           setLive(true);
         }
       } catch {
@@ -256,6 +266,52 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         }));
         return next.id;
       },
+      upsertVideoJob: (job) => {
+        const next = withId(
+          {
+            sourceFiles: [],
+            finalFiles: [],
+            ...job,
+          },
+          "vid"
+        );
+        patch((s) => ({
+          ...s,
+          videoJobs: (s.videoJobs ?? []).some((j) => j.id === next.id)
+            ? s.videoJobs.map((j) => (j.id === next.id ? { ...j, ...next } : j))
+            : [next, ...(s.videoJobs ?? [])],
+        }));
+        return next.id;
+      },
+      setVideoJobStatus: (id, status) =>
+        patch((s) => ({
+          ...s,
+          videoJobs: (s.videoJobs ?? []).map((j) =>
+            j.id === id ? { ...j, status } : j
+          ),
+        })),
+      attachFile: (jobId, file) =>
+        patch((s) => ({
+          ...s,
+          videoJobs: (s.videoJobs ?? []).map((j) => {
+            if (j.id !== jobId) return j;
+            const key = file.kind === "final" ? "finalFiles" : "sourceFiles";
+            return { ...j, [key]: [...j[key], file] };
+          }),
+        })),
+      removeFile: (jobId, fileId) =>
+        patch((s) => ({
+          ...s,
+          videoJobs: (s.videoJobs ?? []).map((j) =>
+            j.id === jobId
+              ? {
+                  ...j,
+                  sourceFiles: j.sourceFiles.filter((f) => f.id !== fileId),
+                  finalFiles: j.finalFiles.filter((f) => f.id !== fileId),
+                }
+              : j
+          ),
+        })),
       resetDemo: () => {
         const userId = state.currentUserId;
         const next = withUser(seedState(), userId);

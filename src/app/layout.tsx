@@ -20,9 +20,9 @@ const instrument = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Relay Desk",
+  title: "Akaai Spaces",
   description:
-    "The operating desk for a marketing studio: campaigns, calendar, deadlines, and recaps in one place.",
+    "The Akaai Spaces operating desk: video handoff, campaigns, calendar, and recaps for the whole studio.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

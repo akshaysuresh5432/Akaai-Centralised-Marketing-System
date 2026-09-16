@@ -25,6 +25,7 @@ import {
   RECAP_TYPES,
   TASK_PRIORITIES,
   TASK_STATUSES,
+  VIDEO_STATUSES,
   type CampaignStatus,
   type Channel,
   type ClientStatus,
@@ -34,6 +35,7 @@ import {
   type RecapType,
   type TaskPriority,
   type TaskStatus,
+  type VideoStatus,
 } from "@/lib/types";
 import {
   campaignStatusLabel,
@@ -42,10 +44,12 @@ import {
   priorityLabel,
   recapTypeLabel,
   taskStatusLabel,
+  videoStatusLabel,
 } from "@/lib/labels";
 import { toast } from "sonner";
 
 const kinds: { id: ComposerKind; label: string }[] = [
+  { id: "video", label: "Video job" },
   { id: "task", label: "Task" },
   { id: "deliverable", label: "Publish / asset" },
   { id: "campaign", label: "Campaign" },
@@ -77,7 +81,7 @@ export function Composer({
         <DialogHeader>
           <DialogTitle>Add to the desk</DialogTitle>
           <DialogDescription>
-            Tasks, campaigns, publishes, recaps — same place for everyone.
+            Tasks, campaigns, video files, recaps — same place for everyone.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-wrap gap-1">
@@ -93,6 +97,7 @@ export function Composer({
             </Button>
           ))}
         </div>
+        {kind === "video" && <VideoForm onDone={() => onOpenChange(false)} />}
         {kind === "task" && <TaskForm onDone={() => onOpenChange(false)} />}
         {kind === "deliverable" && (
           <DeliverableForm onDone={() => onOpenChange(false)} />
@@ -743,6 +748,159 @@ function PersonForm({ onDone }: { onDone: () => void }) {
       </Field>
       <DialogFooter>
         <Button type="submit">Add to the team</Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
+function VideoForm({ onDone }: { onDone: () => void }) {
+  const router = useRouter();
+  const { state, upsertVideoJob } = useStudio();
+  const editor =
+    state.team.find((p) => p.role.toLowerCase().includes("video"))?.id ??
+    state.currentUserId;
+  const poster =
+    state.team.find((p) => p.role.toLowerCase().includes("posting"))?.id ??
+    state.currentUserId;
+  const [title, setTitle] = useState("");
+  const [brief, setBrief] = useState("");
+  const [clientId, setClientId] = useState(state.clients[0]?.id ?? "");
+  const [campaignId, setCampaignId] = useState("");
+  const [dueDate, setDueDate] = useState(todayISO());
+  const [editorId, setEditorId] = useState(editor);
+  const [posterId, setPosterId] = useState(poster);
+  const [status, setStatus] = useState<VideoStatus>("need-files");
+  const [platforms, setPlatforms] = useState<Channel[]>(["Instagram", "TikTok"]);
+
+  return (
+    <form
+      className="grid gap-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!title.trim()) return;
+        const id = upsertVideoJob({
+          title: title.trim(),
+          brief,
+          clientId: clientId || undefined,
+          campaignId: campaignId || undefined,
+          status,
+          dueDate,
+          platforms,
+          editorId,
+          posterId,
+        });
+        toast.success("Video job is on the desk");
+        onDone();
+        router.push(`/video/${id}`);
+      }}
+    >
+      <Field label="What are we cutting">
+        <Input value={title} onChange={(e) => setTitle(e.target.value)} required />
+      </Field>
+      <Field label="Brief for the editor">
+        <Textarea value={brief} onChange={(e) => setBrief(e.target.value)} />
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Client">
+          <select
+            className={fieldControl}
+            value={clientId}
+            onChange={(e) => setClientId(e.target.value)}
+          >
+            {state.clients.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Campaign">
+          <select
+            className={fieldControl}
+            value={campaignId}
+            onChange={(e) => setCampaignId(e.target.value)}
+          >
+            <option value="">None</option>
+            {state.campaigns
+              .filter((c) => !clientId || c.clientId === clientId)
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+          </select>
+        </Field>
+        <Field label="Due">
+          <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+        </Field>
+        <Field label="Status">
+          <select
+            className={fieldControl}
+            value={status}
+            onChange={(e) => setStatus(e.target.value as VideoStatus)}
+          >
+            {VIDEO_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {videoStatusLabel[s]}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Editor">
+          <select
+            className={fieldControl}
+            value={editorId}
+            onChange={(e) => setEditorId(e.target.value)}
+          >
+            {state.team.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name} · {p.role}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Posts it">
+          <select
+            className={fieldControl}
+            value={posterId}
+            onChange={(e) => setPosterId(e.target.value)}
+          >
+            {state.team.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name} · {p.role}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      <fieldset className="grid gap-2">
+        <legend className="text-sm text-muted-foreground">Goes out on</legend>
+        <div className="flex flex-wrap gap-2">
+          {CHANNELS.map((ch) => {
+            const on = platforms.includes(ch);
+            return (
+              <button
+                key={ch}
+                type="button"
+                onClick={() =>
+                  setPlatforms((prev) =>
+                    on ? prev.filter((c) => c !== ch) : [...prev, ch]
+                  )
+                }
+                className={
+                  on
+                    ? "rounded-full bg-primary px-2.5 py-1 text-xs text-primary-foreground"
+                    : "rounded-full border px-2.5 py-1 text-xs"
+                }
+              >
+                {ch}
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+      <DialogFooter>
+        <Button type="submit">Create video job</Button>
       </DialogFooter>
     </form>
   );
