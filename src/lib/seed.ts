@@ -5,6 +5,7 @@ export const STORAGE_KEY = "relay-desk-v1";
 export const seedState = (): StudioState => ({
   studioName: "Suresh Studio",
   currentUserId: "tm-akshay",
+  updatedAt: Date.now(),
   team: [
     {
       id: "tm-akshay",

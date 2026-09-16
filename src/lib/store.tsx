@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -22,9 +23,12 @@ import type {
   TeamMember,
 } from "./types";
 
+const USER_KEY = "relay-desk-user";
+
 type StudioContextValue = {
   state: StudioState;
   ready: boolean;
+  live: boolean;
   setStudioName: (name: string) => void;
   setCurrentUser: (id: string) => void;
   upsertClient: (client: Omit<Client, "id"> & { id?: string }) => string;
@@ -48,39 +52,121 @@ function withId<T extends { id?: string }>(item: T, prefix: string) {
   return { ...item, id: item.id ?? uid(prefix) } as T & { id: string };
 }
 
+function withUser(state: StudioState, userId: string): StudioState {
+  return { ...state, currentUserId: userId };
+}
+
 export function StudioProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<StudioState>(seedState);
   const [ready, setReady] = useState(false);
+  const [live, setLive] = useState(false);
+  const skipPush = useRef(true);
+  const saving = useRef(false);
+  const stateRef = useRef(state);
 
   useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  const push = useCallback(async (next: StudioState) => {
+    saving.current = true;
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        // Restore after mount so server HTML and the first client paint match.
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage restore
-        setState(JSON.parse(raw) as StudioState);
-      }
+      const res = await fetch("/api/studio", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(next),
+      });
+      if (res.ok) setLive(true);
     } catch {
-      // keep seed
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    } finally {
+      saving.current = false;
     }
-    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const userId =
+      localStorage.getItem(USER_KEY) || seedState().currentUserId;
+
+    (async () => {
+      try {
+        const res = await fetch("/api/studio", { cache: "no-store" });
+        if (res.ok) {
+          const remote = (await res.json()) as StudioState;
+          if (!cancelled) {
+            skipPush.current = true;
+            setState(withUser(remote, userId));
+            setLive(true);
+          }
+        } else {
+          throw new Error("offline");
+        }
+      } catch {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw && !cancelled) {
+            skipPush.current = true;
+            setState(withUser(JSON.parse(raw) as StudioState, userId));
+          }
+        } catch {
+          // seed
+        }
+      } finally {
+        if (!cancelled) setReady(true);
+      }
+    })();
+
+    const tick = window.setInterval(async () => {
+      if (saving.current) return;
+      try {
+        const res = await fetch("/api/studio", { cache: "no-store" });
+        if (!res.ok) return;
+        const remote = (await res.json()) as StudioState;
+        const local = stateRef.current;
+        if ((remote.updatedAt ?? 0) > (local.updatedAt ?? 0)) {
+          skipPush.current = true;
+          setState(withUser(remote, local.currentUserId));
+          setLive(true);
+        }
+      } catch {
+        // keep local
+      }
+    }, 4000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(tick);
+    };
   }, []);
 
   useEffect(() => {
     if (!ready) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [state, ready]);
+    localStorage.setItem(USER_KEY, state.currentUserId);
+    if (skipPush.current) {
+      skipPush.current = false;
+      return;
+    }
+    const handle = window.setTimeout(() => {
+      void push(state);
+    }, 350);
+    return () => window.clearTimeout(handle);
+  }, [state, ready, push]);
 
   const patch = useCallback((updater: (prev: StudioState) => StudioState) => {
-    setState((prev) => updater(prev));
+    setState((prev) => updater({ ...prev, updatedAt: Date.now() }));
   }, []);
 
   const value = useMemo<StudioContextValue>(
     () => ({
       state,
       ready,
+      live,
       setStudioName: (studioName) => patch((s) => ({ ...s, studioName })),
-      setCurrentUser: (currentUserId) => patch((s) => ({ ...s, currentUserId })),
+      setCurrentUser: (currentUserId) => {
+        localStorage.setItem(USER_KEY, currentUserId);
+        setState((s) => ({ ...s, currentUserId }));
+      },
       upsertClient: (client) => {
         const next = withId(client, "cl");
         patch((s) => ({
@@ -171,12 +257,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         return next.id;
       },
       resetDemo: () => {
-        const next = seedState();
+        const userId = state.currentUserId;
+        const next = withUser(seedState(), userId);
+        skipPush.current = false;
         setState(next);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        void push(next);
       },
     }),
-    [state, ready, patch]
+    [state, ready, live, patch, push]
   );
 
   return <StudioContext.Provider value={value}>{children}</StudioContext.Provider>;

@@ -157,6 +157,7 @@ export type Recap = {
 export type StudioState = {
   studioName: string;
   currentUserId: string;
+  updatedAt: number;
   team: TeamMember[];
   clients: Client[];
   campaigns: Campaign[];

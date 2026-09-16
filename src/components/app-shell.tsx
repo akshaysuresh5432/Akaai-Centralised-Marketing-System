@@ -34,7 +34,7 @@ const nav = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { state, setCurrentUser } = useStudio();
+  const { state, setCurrentUser, live } = useStudio();
   const [composer, setComposer] = useState(false);
   const [kind, setKind] = useState<ComposerKind>("task");
 
@@ -96,6 +96,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <p className="hidden text-sm text-muted-foreground md:block">
             One desk for campaigns, the calendar, and the close of day.
+          </p>
+          <p
+            className={
+              live
+                ? "hidden rounded-full bg-emerald-100 px-2.5 py-1 text-xs text-emerald-900 sm:block"
+                : "hidden rounded-full bg-amber-100 px-2.5 py-1 text-xs text-amber-950 sm:block"
+            }
+          >
+            {live ? "Live — team sees the same desk" : "Connecting to live desk…"}
           </p>
           <div className="ml-auto flex items-center gap-2">
             <label className="hidden items-center gap-2 text-sm sm:flex">
