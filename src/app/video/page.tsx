@@ -9,7 +9,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { formatShort } from "@/lib/dates";
 import { videoStatusLabel } from "@/lib/labels";
-import { campaign, client, person } from "@/lib/selectors";
+import { campaign, company, person } from "@/lib/selectors";
 import { useStudio } from "@/lib/store";
 import { VIDEO_STATUSES, type VideoStatus } from "@/lib/types";
 
@@ -119,7 +119,7 @@ export default function VideoDeskPage() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-xs text-muted-foreground">
-                  {client(state, j.clientId)?.name} ·{" "}
+                  {company(state, j.clientId)?.name} ·{" "}
                   {campaign(state, j.campaignId)?.name}
                 </p>
                 <h2 className="font-heading text-2xl">{j.title}</h2>

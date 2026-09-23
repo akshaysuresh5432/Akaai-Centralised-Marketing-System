@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { fieldControl } from "@/components/field";
 import { formatShort } from "@/lib/dates";
 import { videoStatusLabel } from "@/lib/labels";
-import { campaign, client } from "@/lib/selectors";
+import { campaign, company } from "@/lib/selectors";
 import { useStudio } from "@/lib/store";
 import { VIDEO_STATUSES, type VideoStatus } from "@/lib/types";
 
@@ -35,7 +35,7 @@ export default function VideoJobPage() {
       />
     );
   }
-  const cl = client(state, job.clientId);
+  const cl = company(state, job.clientId);
   const camp = campaign(state, job.campaignId);
 
   return (
@@ -55,17 +55,12 @@ export default function VideoJobPage() {
         <StatusBadge kind="video" value={job.status} />
         <span className="text-sm">Due {formatShort(job.dueDate)}</span>
         {cl && (
-          <Link href={`/clients/${cl.id}`} className="text-sm underline-offset-2 hover:underline">
+          <Link href={`/companies/${cl.id}`} className="text-sm underline-offset-2 hover:underline">
             {cl.name}
           </Link>
         )}
         {camp && (
-          <Link
-            href={`/campaigns/${camp.id}`}
-            className="text-sm underline-offset-2 hover:underline"
-          >
-            {camp.name}
-          </Link>
+            <span className="text-sm">{camp.name}</span>
         )}
       </div>
 

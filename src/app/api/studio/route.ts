@@ -10,7 +10,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   const body = (await request.json()) as StudioState;
-  if (!body || !Array.isArray(body.campaigns) || !Array.isArray(body.team)) {
+  if (!body || !Array.isArray(body.companies) || !Array.isArray(body.projects)) {
     return Response.json({ error: "Invalid desk" }, { status: 400 });
   }
   body.updatedAt = Date.now();

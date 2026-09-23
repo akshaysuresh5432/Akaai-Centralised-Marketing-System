@@ -1,20 +1,20 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
-import { DayRun } from "@/components/day-run";
 import { PageHeader } from "@/components/page-header";
+import { PersonChip } from "@/components/person-chip";
+import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import {
-  addDays,
   formatShort,
   formatWeekday,
   monthMatrix,
   shiftMonth,
   startOfMonth,
   todayISO,
-  weekDays,
 } from "@/lib/dates";
-import { dayDeliverables, dayMilestones, dayTasks } from "@/lib/selectors";
+import { company, reminders } from "@/lib/selectors";
 import { useStudio } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -22,152 +22,134 @@ export default function CalendarPage() {
   const { state } = useStudio();
   const today = todayISO();
   const [cursor, setCursor] = useState(startOfMonth(today));
-  const [selected, setSelected] = useState(today);
-  const [mode, setMode] = useState<"month" | "week">("month");
+  const [filter, setFilter] = useState<"all" | "publish" | "invoice" | "mine">(
+    "all"
+  );
   const weeks = useMemo(() => monthMatrix(cursor), [cursor]);
-  const week = weekDays(selected);
-
-  const count = (iso: string) =>
-    dayDeliverables(state, iso).length +
-    dayTasks(state, iso).length +
-    dayMilestones(state, iso).length;
+  const all = reminders(state);
+  const list = all.filter((r) => {
+    if (filter === "mine") return r.ownerId === state.currentUserId;
+    if (filter === "all") return true;
+    return r.kind === filter;
+  });
+  const byDay = (iso: string) => all.filter((r) => r.date === iso);
 
   return (
     <div>
       <PageHeader
-        kicker="Calendar"
-        title="What happens, and when"
-        description="Publishes, internal deadlines, and campaign milestones on one calendar. Pick a day to see the run of show."
-        actions={
-          <>
-            <Button
-              variant={mode === "month" ? "default" : "outline"}
-              onClick={() => setMode("month")}
-            >
-              Month
-            </Button>
-            <Button
-              variant={mode === "week" ? "default" : "outline"}
-              onClick={() => setMode("week")}
-            >
-              Week
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setCursor(startOfMonth(today));
-                setSelected(today);
-              }}
-            >
-              Today
-            </Button>
-          </>
-        }
+        kicker="Reminders"
+        title="Everyone’s calendar"
+        description="Publish dates and invoice dates. Switch Working as to see your own reminders."
       />
 
-      {mode === "month" ? (
-        <div className="mb-4 flex items-center justify-between">
-          <Button variant="outline" onClick={() => setCursor(shiftMonth(cursor, -1))}>
-            Previous
+      <div className="mb-5 flex flex-wrap gap-2">
+        {(
+          [
+            ["all", "All"],
+            ["publish", "Publish"],
+            ["invoice", "Invoice"],
+            ["mine", "Mine"],
+          ] as const
+        ).map(([id, label]) => (
+          <Button
+            key={id}
+            size="sm"
+            variant={filter === id ? "default" : "outline"}
+            onClick={() => setFilter(id)}
+          >
+            {label}
           </Button>
-          <p className="font-heading text-2xl">
-            {new Date(cursor + "T12:00:00").toLocaleDateString("en-US", {
-              month: "long",
-              year: "numeric",
-            })}
-          </p>
-          <Button variant="outline" onClick={() => setCursor(shiftMonth(cursor, 1))}>
-            Next
-          </Button>
-        </div>
-      ) : (
-        <div className="mb-4 flex items-center justify-between">
-          <Button variant="outline" onClick={() => setSelected(addDays(selected, -7))}>
-            Previous week
-          </Button>
-          <p className="font-heading text-2xl">
-            {formatShort(week[0])} – {formatShort(week[6])}
-          </p>
-          <Button variant="outline" onClick={() => setSelected(addDays(selected, 7))}>
-            Next week
-          </Button>
-        </div>
-      )}
+        ))}
+      </div>
 
-      {mode === "month" && (
-        <div className="mb-8 overflow-x-auto rounded-xl border bg-card">
-          <div className="grid grid-cols-7 border-b text-xs text-muted-foreground">
-            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-              <div key={d} className="px-2 py-2 text-center">
-                {d}
-              </div>
-            ))}
-          </div>
-          {weeks.map((weekRow) => (
-            <div key={weekRow[0]} className="grid grid-cols-7">
-              {weekRow.map((iso) => {
-                const inMonth = iso.slice(0, 7) === cursor.slice(0, 7);
-                const n = count(iso);
-                return (
-                  <button
-                    key={iso}
-                    type="button"
-                    onClick={() => setSelected(iso)}
-                    className={cn(
-                      "min-h-20 border-t border-r p-2 text-left last:border-r-0",
-                      !inMonth && "bg-muted/40 text-muted-foreground",
-                      iso === selected && "bg-primary/10",
-                      iso === today && "font-semibold"
-                    )}
-                  >
-                    <span className="text-sm">{Number(iso.slice(8))}</span>
-                    {n > 0 && (
-                      <span className="mt-2 flex gap-1">
-                        {Array.from({ length: Math.min(n, 4) }).map((_, i) => (
-                          <span
-                            key={i}
-                            className="size-1.5 rounded-full bg-primary"
-                          />
-                        ))}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+      <div className="mb-4 flex items-center justify-between">
+        <Button variant="outline" onClick={() => setCursor(shiftMonth(cursor, -1))}>
+          Previous
+        </Button>
+        <p className="font-heading text-2xl">
+          {new Date(cursor + "T12:00:00").toLocaleDateString("en-US", {
+            month: "long",
+            year: "numeric",
+          })}
+        </p>
+        <Button variant="outline" onClick={() => setCursor(shiftMonth(cursor, 1))}>
+          Next
+        </Button>
+      </div>
+
+      <div className="mb-10 overflow-hidden rounded-2xl border bg-card">
+        <div className="grid grid-cols-7 text-center text-xs text-muted-foreground">
+          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
+            <div key={d} className="py-2">
+              {d}
             </div>
           ))}
         </div>
-      )}
+        {weeks.map((week) => (
+          <div key={week[0]} className="grid grid-cols-7 border-t">
+            {week.map((iso) => {
+              const items = byDay(iso);
+              const inMonth = iso.slice(0, 7) === cursor.slice(0, 7);
+              return (
+                <div
+                  key={iso}
+                  className={cn(
+                    "min-h-[4.5rem] border-r p-1.5 last:border-r-0",
+                    !inMonth && "bg-muted/40 text-muted-foreground",
+                    iso === today && "bg-primary/5"
+                  )}
+                >
+                  <p className="text-xs">{Number(iso.slice(8))}</p>
+                  <div className="mt-1 flex flex-wrap gap-0.5">
+                    {items.map((r) => (
+                      <span
+                        key={r.id}
+                        title={r.title}
+                        className={
+                          r.kind === "invoice"
+                            ? "size-1.5 rounded-full bg-amber-500"
+                            : "size-1.5 rounded-full bg-sky-500"
+                        }
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
 
-      {mode === "week" && (
-        <div className="mb-8 grid gap-2 md:grid-cols-7">
-          {week.map((iso) => (
-            <button
-              key={iso}
-              type="button"
-              onClick={() => setSelected(iso)}
-              className={cn(
-                "rounded-xl border p-3 text-left",
-                iso === selected && "border-primary bg-primary/5",
-                iso === today && "ring-1 ring-foreground/20"
-              )}
+      <h2 className="font-heading mb-3 text-2xl">List</h2>
+      <ul className="grid gap-2">
+        {list.map((r) => (
+          <li key={r.id}>
+            <Link
+              href={r.href}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3"
             >
-              <p className="text-xs text-muted-foreground">{formatWeekday(iso)}</p>
-              <p className="font-heading text-2xl">{Number(iso.slice(8))}</p>
-              <p className="text-xs text-muted-foreground">{count(iso)} items</p>
-            </button>
-          ))}
-        </div>
-      )}
-
-      <h2 className="font-heading mb-4 text-2xl">
-        {new Date(selected + "T12:00:00").toLocaleDateString("en-US", {
-          weekday: "long",
-          month: "long",
-          day: "numeric",
-        })}
-      </h2>
-      <DayRun iso={selected} />
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  {formatWeekday(r.date)} {formatShort(r.date)} ·{" "}
+                  {company(state, r.companyId)?.name}
+                </p>
+                <p>{r.title}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <StatusBadge kind="reminder" value={r.kind} />
+                <PersonChip state={state} id={r.ownerId} className="text-sm" />
+                {r.amount && <span className="text-sm">{r.amount}</span>}
+              </div>
+            </Link>
+          </li>
+        ))}
+        {list.length === 0 && (
+          <p className="text-sm text-muted-foreground">Nothing in this view.</p>
+        )}
+      </ul>
+      <p className="mt-6 text-xs text-muted-foreground">
+        Blue is publish. Gold is invoice.
+      </p>
     </div>
   );
 }

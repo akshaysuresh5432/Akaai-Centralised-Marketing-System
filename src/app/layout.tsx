@@ -22,7 +22,7 @@ const instrument = Instrument_Serif({
 export const metadata: Metadata = {
   title: "Akaai Spaces",
   description:
-    "The Akaai Spaces operating desk: video handoff, campaigns, calendar, and recaps for the whole studio.",
+    "Projects, companies, publish dates, and invoice reminders for Akaai Spaces.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

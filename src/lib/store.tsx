@@ -12,42 +12,38 @@ import {
 } from "react";
 import { uid } from "./id";
 import { seedState, STORAGE_KEY } from "./seed";
+import { normalizeStudio } from "./normalize";
 import type {
   Campaign,
-  Client,
+  Company,
   Deliverable,
   FileAsset,
-  Milestone,
-  Recap,
+  Invoice,
+  Project,
   StudioState,
-  Task,
   TeamMember,
   VideoJob,
   VideoStatus,
 } from "./types";
-import { normalizeStudio } from "./normalize";
 
-const USER_KEY = "relay-desk-user";
+const USER_KEY = "akaai-desk-user";
 
 type StudioContextValue = {
   state: StudioState;
   ready: boolean;
   live: boolean;
-  setStudioName: (name: string) => void;
   setCurrentUser: (id: string) => void;
-  upsertClient: (client: Omit<Client, "id"> & { id?: string }) => string;
-  upsertCampaign: (campaign: Omit<Campaign, "id"> & { id?: string }) => string;
-  upsertMilestone: (milestone: Omit<Milestone, "id"> & { id?: string }) => string;
-  toggleMilestone: (id: string) => void;
-  upsertDeliverable: (
-    deliverable: Omit<Deliverable, "id"> & { id?: string }
+  upsertCompany: (row: Omit<Company, "id"> & { id?: string }) => string;
+  upsertProject: (row: Omit<Project, "id"> & { id?: string }) => string;
+  upsertCampaign: (row: Omit<Campaign, "id"> & { id?: string }) => string;
+  upsertDeliverable: (row: Omit<Deliverable, "id"> & { id?: string }) => string;
+  setDeliverableDone: (id: string, done: boolean) => void;
+  upsertInvoice: (row: Omit<Invoice, "id"> & { id?: string }) => string;
+  setInvoicePaid: (id: string, paid: boolean) => void;
+  upsertPerson: (row: Omit<TeamMember, "id"> & { id?: string }) => string;
+  upsertVideoJob: (
+    job: Omit<VideoJob, "id" | "sourceFiles" | "finalFiles"> & { id?: string }
   ) => string;
-  setDeliverableStatus: (id: string, status: Deliverable["status"]) => void;
-  upsertTask: (task: Omit<Task, "id"> & { id?: string }) => string;
-  setTaskStatus: (id: string, status: Task["status"]) => void;
-  upsertRecap: (recap: Omit<Recap, "id"> & { id?: string }) => string;
-  upsertPerson: (person: Omit<TeamMember, "id"> & { id?: string }) => string;
-  upsertVideoJob: (job: Omit<VideoJob, "id" | "sourceFiles" | "finalFiles"> & { id?: string }) => string;
   setVideoJobStatus: (id: string, status: VideoStatus) => void;
   attachFile: (jobId: string, file: FileAsset) => void;
   removeFile: (jobId: string, fileId: string) => void;
@@ -62,6 +58,12 @@ function withId<T extends { id?: string }>(item: T, prefix: string) {
 
 function withUser(state: StudioState, userId: string): StudioState {
   return { ...state, currentUserId: userId };
+}
+
+function upsertList<T extends { id: string }>(list: T[], row: T) {
+  return list.some((x) => x.id === row.id)
+    ? list.map((x) => (x.id === row.id ? row : x))
+    : [row, ...list];
 }
 
 export function StudioProvider({ children }: { children: ReactNode }) {
@@ -94,8 +96,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    const userId =
-      localStorage.getItem(USER_KEY) || seedState().currentUserId;
+    const userId = localStorage.getItem(USER_KEY) || seedState().currentUserId;
 
     (async () => {
       try {
@@ -107,9 +108,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             setState(withUser(normalizeStudio(remote), userId));
             setLive(true);
           }
-        } else {
-          throw new Error("offline");
-        }
+        } else throw new Error("offline");
       } catch {
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
@@ -172,128 +171,77 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       state,
       ready,
       live,
-      setStudioName: (studioName) => patch((s) => ({ ...s, studioName })),
       setCurrentUser: (currentUserId) => {
         localStorage.setItem(USER_KEY, currentUserId);
         setState((s) => ({ ...s, currentUserId }));
       },
-      upsertClient: (client) => {
-        const next = withId(client, "cl");
+      upsertCompany: (row) => {
+        const next = withId(row, "co");
+        patch((s) => ({ ...s, companies: upsertList(s.companies, next) }));
+        return next.id;
+      },
+      upsertProject: (row) => {
+        const next = withId(row, "pr");
+        patch((s) => ({ ...s, projects: upsertList(s.projects, next) }));
+        return next.id;
+      },
+      upsertCampaign: (row) => {
+        const next = withId(row, "ca");
+        patch((s) => ({ ...s, campaigns: upsertList(s.campaigns, next) }));
+        return next.id;
+      },
+      upsertDeliverable: (row) => {
+        const next = withId(row, "dl");
         patch((s) => ({
           ...s,
-          clients: s.clients.some((c) => c.id === next.id)
-            ? s.clients.map((c) => (c.id === next.id ? next : c))
-            : [next, ...s.clients],
+          deliverables: upsertList(s.deliverables, next),
         }));
         return next.id;
       },
-      upsertCampaign: (campaign) => {
-        const next = withId(campaign, "camp");
-        patch((s) => ({
-          ...s,
-          campaigns: s.campaigns.some((c) => c.id === next.id)
-            ? s.campaigns.map((c) => (c.id === next.id ? next : c))
-            : [next, ...s.campaigns],
-        }));
-        return next.id;
-      },
-      upsertMilestone: (milestone) => {
-        const next = withId(milestone, "ms");
-        patch((s) => ({
-          ...s,
-          milestones: s.milestones.some((m) => m.id === next.id)
-            ? s.milestones.map((m) => (m.id === next.id ? next : m))
-            : [...s.milestones, next],
-        }));
-        return next.id;
-      },
-      toggleMilestone: (id) =>
-        patch((s) => ({
-          ...s,
-          milestones: s.milestones.map((m) =>
-            m.id === id ? { ...m, done: !m.done } : m
-          ),
-        })),
-      upsertDeliverable: (deliverable) => {
-        const next = withId(deliverable, "dv");
-        patch((s) => ({
-          ...s,
-          deliverables: s.deliverables.some((d) => d.id === next.id)
-            ? s.deliverables.map((d) => (d.id === next.id ? next : d))
-            : [next, ...s.deliverables],
-        }));
-        return next.id;
-      },
-      setDeliverableStatus: (id, status) =>
+      setDeliverableDone: (id, done) =>
         patch((s) => ({
           ...s,
           deliverables: s.deliverables.map((d) =>
-            d.id === id ? { ...d, status } : d
+            d.id === id ? { ...d, done } : d
           ),
         })),
-      upsertTask: (task) => {
-        const next = withId(task, "tk");
-        patch((s) => ({
-          ...s,
-          tasks: s.tasks.some((t) => t.id === next.id)
-            ? s.tasks.map((t) => (t.id === next.id ? next : t))
-            : [next, ...s.tasks],
-        }));
+      upsertInvoice: (row) => {
+        const next = withId(row, "inv");
+        patch((s) => ({ ...s, invoices: upsertList(s.invoices, next) }));
         return next.id;
       },
-      setTaskStatus: (id, status) =>
+      setInvoicePaid: (id, paid) =>
         patch((s) => ({
           ...s,
-          tasks: s.tasks.map((t) => (t.id === id ? { ...t, status } : t)),
+          invoices: s.invoices.map((i) => (i.id === id ? { ...i, paid } : i)),
         })),
-      upsertRecap: (recap) => {
-        const next = withId(recap, "rc");
-        patch((s) => ({
-          ...s,
-          recaps: s.recaps.some((r) => r.id === next.id)
-            ? s.recaps.map((r) => (r.id === next.id ? next : r))
-            : [next, ...s.recaps],
-        }));
-        return next.id;
-      },
-      upsertPerson: (person) => {
-        const next = withId(person, "tm");
-        patch((s) => ({
-          ...s,
-          team: s.team.some((p) => p.id === next.id)
-            ? s.team.map((p) => (p.id === next.id ? next : p))
-            : [...s.team, next],
-        }));
+      upsertPerson: (row) => {
+        const next = withId(row, "tm");
+        patch((s) => ({ ...s, team: upsertList(s.team, next) }));
         return next.id;
       },
       upsertVideoJob: (job) => {
         const next = withId(
-          {
-            sourceFiles: [],
-            finalFiles: [],
-            ...job,
-          },
+          { sourceFiles: [], finalFiles: [], ...job },
           "vid"
         );
         patch((s) => ({
           ...s,
-          videoJobs: (s.videoJobs ?? []).some((j) => j.id === next.id)
-            ? s.videoJobs.map((j) => (j.id === next.id ? { ...j, ...next } : j))
-            : [next, ...(s.videoJobs ?? [])],
+          videoJobs: upsertList(s.videoJobs ?? [], next),
         }));
         return next.id;
       },
       setVideoJobStatus: (id, status) =>
         patch((s) => ({
           ...s,
-          videoJobs: (s.videoJobs ?? []).map((j) =>
+          videoJobs: s.videoJobs.map((j) =>
             j.id === id ? { ...j, status } : j
           ),
         })),
       attachFile: (jobId, file) =>
         patch((s) => ({
           ...s,
-          videoJobs: (s.videoJobs ?? []).map((j) => {
+          videoJobs: s.videoJobs.map((j) => {
             if (j.id !== jobId) return j;
             const key = file.kind === "final" ? "finalFiles" : "sourceFiles";
             return { ...j, [key]: [...j[key], file] };
@@ -302,7 +250,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       removeFile: (jobId, fileId) =>
         patch((s) => ({
           ...s,
-          videoJobs: (s.videoJobs ?? []).map((j) =>
+          videoJobs: s.videoJobs.map((j) =>
             j.id === jobId
               ? {
                   ...j,
@@ -313,8 +261,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           ),
         })),
       resetDemo: () => {
-        const userId = state.currentUserId;
-        const next = withUser(seedState(), userId);
+        const next = withUser(seedState(), state.currentUserId);
         skipPush.current = false;
         setState(next);
         void push(next);
@@ -323,7 +270,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     [state, ready, live, patch, push]
   );
 
-  return <StudioContext.Provider value={value}>{children}</StudioContext.Provider>;
+  return (
+    <StudioContext.Provider value={value}>{children}</StudioContext.Provider>
+  );
 }
 
 export function useStudio() {

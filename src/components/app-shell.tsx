@@ -4,16 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
+  Building2,
   CalendarDays,
   Clapperboard,
-  ClipboardCheck,
-  FolderKanban,
-  Megaphone,
-  NotebookPen,
+  LayoutGrid,
   Plus,
-  Sun,
-  Users,
-  Building2,
 } from "lucide-react";
 import { Composer } from "@/components/composer";
 import { Button } from "@/components/ui/button";
@@ -23,35 +18,30 @@ import { cn } from "@/lib/utils";
 import type { ComposerKind } from "@/lib/types";
 
 const nav = [
-  { href: "/", label: "Today", icon: Sun },
-  { href: "/video", label: "Video", icon: Clapperboard },
+  { href: "/", label: "Projects", icon: LayoutGrid },
+  { href: "/companies", label: "Companies", icon: Building2 },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
-  { href: "/campaigns", label: "Campaigns", icon: Megaphone },
-  { href: "/work", label: "Work", icon: FolderKanban },
-  { href: "/approvals", label: "Approvals", icon: ClipboardCheck },
-  { href: "/recaps", label: "Recaps", icon: NotebookPen },
-  { href: "/clients", label: "Clients", icon: Building2 },
-  { href: "/team", label: "Team", icon: Users },
+  { href: "/video", label: "Video", icon: Clapperboard },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { state, setCurrentUser, live } = useStudio();
   const [composer, setComposer] = useState(false);
-  const [kind, setKind] = useState<ComposerKind>("task");
+  const [kind, setKind] = useState<ComposerKind>("publish");
 
   return (
     <div className="flex min-h-full">
-      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
-        <div className="px-5 py-6">
-          <p className="text-[11px] tracking-[0.22em] uppercase text-sidebar-foreground/55">
+      <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
+        <div className="px-5 py-7">
+          <p className="text-[11px] tracking-[0.22em] uppercase text-sidebar-foreground/50">
             Akaai Spaces
           </p>
-          <p className="font-heading mt-1 text-2xl leading-tight">
-            {state.studioName}
+          <p className="font-heading mt-2 text-[1.65rem] leading-tight">
+            Desk
           </p>
         </div>
-        <nav className="grid gap-0.5 px-3">
+        <nav className="grid gap-1 px-3">
           {nav.map((item) => {
             const active =
               item.href === "/"
@@ -63,10 +53,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
+                  "flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm",
                   active
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60"
+                    : "text-sidebar-foreground/75 hover:bg-sidebar-accent/70"
                 )}
               >
                 <Icon className="size-4" />
@@ -75,11 +65,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="mt-auto grid gap-2 p-4">
+        <div className="mt-auto p-4">
           <Button
             className="w-full"
             onClick={() => {
-              setKind("task");
+              setKind("publish");
               setComposer(true);
             }}
           >
@@ -89,53 +79,44 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b bg-background/90 px-4 py-3 backdrop-blur md:px-8">
+        <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-background/85 px-5 py-3.5 backdrop-blur md:px-10">
           <div className="md:hidden">
-            <p className="text-[11px] tracking-[0.22em] uppercase text-muted-foreground">
+            <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground">
               Akaai Spaces
             </p>
-            <p className="font-heading text-lg">{state.studioName}</p>
           </div>
           <p className="hidden text-sm text-muted-foreground md:block">
-            Footage, campaigns, and posting — one desk for Akaai Spaces.
+            Projects, publish dates, invoices.
           </p>
-          <p
-            className={
-              live
-                ? "hidden rounded-full bg-emerald-100 px-2.5 py-1 text-xs text-emerald-900 sm:block"
-                : "hidden rounded-full bg-amber-100 px-2.5 py-1 text-xs text-amber-950 sm:block"
-            }
-          >
-            {live ? "Live — team sees the same desk" : "Connecting to live desk…"}
-          </p>
+          {live && (
+            <span className="hidden rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] text-emerald-900 sm:inline">
+              Live
+            </span>
+          )}
           <div className="ml-auto flex items-center gap-2">
-            <label className="hidden items-center gap-2 text-sm sm:flex">
-              <span className="text-muted-foreground">Working as</span>
-              <select
-                className={cn(fieldControl, "w-44")}
-                value={state.currentUserId}
-                onChange={(e) => setCurrentUser(e.target.value)}
-              >
-                {state.team.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Button
-              size="sm"
-              className="md:hidden"
-              onClick={() => setComposer(true)}
+            <select
+              className={cn(fieldControl, "w-40")}
+              value={state.currentUserId}
+              onChange={(e) => setCurrentUser(e.target.value)}
+              aria-label="Working as"
             >
+              {state.team.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            <Button size="sm" className="md:hidden" onClick={() => setComposer(true)}>
               <Plus />
               Add
             </Button>
           </div>
         </header>
-        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">{children}</main>
-        <nav className="sticky bottom-0 grid grid-cols-5 border-t bg-background/95 px-1 py-2 backdrop-blur md:hidden">
-          {nav.slice(0, 5).map((item) => {
+        <main className="mx-auto w-full max-w-5xl flex-1 px-5 py-8 md:px-10 md:py-12">
+          {children}
+        </main>
+        <nav className="sticky bottom-0 grid grid-cols-4 border-t bg-background/95 py-2 backdrop-blur md:hidden">
+          {nav.map((item) => {
             const active =
               item.href === "/"
                 ? pathname === "/"
@@ -157,11 +138,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
       </div>
-      <Composer
-        open={composer}
-        onOpenChange={setComposer}
-        defaultKind={kind}
-      />
+      <Composer open={composer} onOpenChange={setComposer} defaultKind={kind} />
     </div>
   );
 }

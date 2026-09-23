@@ -1,143 +1,54 @@
-export const CHANNELS = [
-  "Instagram",
-  "TikTok",
-  "LinkedIn",
-  "Pinterest",
-  "X",
-  "YouTube",
-  "Email",
-  "SMS",
-  "Paid social",
-  "Paid search",
-  "SEO",
-  "PR",
-  "Influencer",
-  "Landing page",
-  "Events",
-] as const;
-
-export type Channel = (typeof CHANNELS)[number];
-
-export const CAMPAIGN_STATUSES = [
-  "planning",
-  "in-market",
-  "always-on",
-  "paused",
-  "wrapped",
-] as const;
+export const CAMPAIGN_STATUSES = ["running", "planned", "done"] as const;
 export type CampaignStatus = (typeof CAMPAIGN_STATUSES)[number];
-
-export const CLIENT_STATUSES = ["active", "onboarding", "paused"] as const;
-export type ClientStatus = (typeof CLIENT_STATUSES)[number];
-
-export const TASK_STATUSES = ["todo", "doing", "blocked", "done"] as const;
-export type TaskStatus = (typeof TASK_STATUSES)[number];
-
-export const TASK_PRIORITIES = ["low", "medium", "high", "urgent"] as const;
-export type TaskPriority = (typeof TASK_PRIORITIES)[number];
-
-export const DELIVERABLE_TYPES = [
-  "social post",
-  "carousel",
-  "reel / short",
-  "ad creative",
-  "email",
-  "landing page",
-  "blog / SEO",
-  "video",
-  "brief",
-  "report",
-  "press",
-] as const;
-export type DeliverableType = (typeof DELIVERABLE_TYPES)[number];
-
-export const DELIVERABLE_STATUSES = [
-  "briefing",
-  "draft",
-  "internal-review",
-  "client-review",
-  "approved",
-  "scheduled",
-  "live",
-  "reported",
-] as const;
-export type DeliverableStatus = (typeof DELIVERABLE_STATUSES)[number];
-
-export const RECAP_TYPES = [
-  "daily-close",
-  "weekly",
-  "campaign",
-  "client-meeting",
-] as const;
-export type RecapType = (typeof RECAP_TYPES)[number];
 
 export type TeamMember = {
   id: string;
   name: string;
   role: string;
-  email: string;
   initials: string;
   color: string;
 };
 
-export type Client = {
+export type Company = {
   id: string;
   name: string;
-  industry: string;
-  status: ClientStatus;
-  contactName: string;
-  contactEmail: string;
-  website: string;
-  retainer: string;
-  notes: string;
+  contact: string;
+  onboarded: string;
+};
+
+export type Project = {
+  id: string;
+  companyId: string;
+  name: string;
+  current: boolean;
 };
 
 export type Campaign = {
   id: string;
-  clientId: string;
+  projectId: string;
   name: string;
-  objective: string;
   status: CampaignStatus;
-  startDate: string;
-  endDate: string;
-  channels: Channel[];
-  budget: string;
-  kpis: string;
-  ownerId: string;
-};
-
-export type Milestone = {
-  id: string;
-  campaignId: string;
-  title: string;
-  date: string;
-  done: boolean;
 };
 
 export type Deliverable = {
   id: string;
-  campaignId: string;
-  clientId: string;
+  companyId: string;
+  campaignId?: string;
   title: string;
-  type: DeliverableType;
-  channel: Channel;
-  status: DeliverableStatus;
-  assigneeId: string;
-  date: string;
-  time?: string;
-  notes: string;
+  publishDate: string;
+  ownerId: string;
+  done: boolean;
 };
 
-export type Task = {
+export type Invoice = {
   id: string;
+  companyId: string;
+  projectId?: string;
   title: string;
-  details: string;
-  status: TaskStatus;
-  priority: TaskPriority;
-  dueDate: string;
-  assigneeId: string;
-  clientId?: string;
-  campaignId?: string;
+  date: string;
+  amount: string;
+  ownerId: string;
+  paid: boolean;
 };
 
 export const VIDEO_STATUSES = [
@@ -149,7 +60,6 @@ export const VIDEO_STATUSES = [
   "posted",
 ] as const;
 export type VideoStatus = (typeof VIDEO_STATUSES)[number];
-
 export type FileKind = "source" | "final";
 
 export type FileAsset = {
@@ -170,25 +80,11 @@ export type VideoJob = {
   campaignId?: string;
   status: VideoStatus;
   dueDate: string;
-  platforms: Channel[];
+  platforms: string[];
   editorId: string;
   posterId: string;
   sourceFiles: FileAsset[];
   finalFiles: FileAsset[];
-};
-
-export type Recap = {
-  id: string;
-  title: string;
-  type: RecapType;
-  date: string;
-  authorId: string;
-  clientId?: string;
-  campaignId?: string;
-  shipped: string;
-  next: string;
-  blockers: string;
-  notes: string;
 };
 
 export type StudioState = {
@@ -196,21 +92,18 @@ export type StudioState = {
   currentUserId: string;
   updatedAt: number;
   team: TeamMember[];
-  clients: Client[];
+  companies: Company[];
+  projects: Project[];
   campaigns: Campaign[];
-  milestones: Milestone[];
   deliverables: Deliverable[];
-  tasks: Task[];
-  recaps: Recap[];
+  invoices: Invoice[];
   videoJobs: VideoJob[];
 };
 
 export type ComposerKind =
-  | "task"
+  | "company"
+  | "project"
   | "campaign"
-  | "client"
-  | "deliverable"
-  | "recap"
-  | "milestone"
-  | "person"
+  | "publish"
+  | "invoice"
   | "video";

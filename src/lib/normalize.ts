@@ -1,23 +1,21 @@
-import { seedState } from "@/lib/seed";
-import type { StudioState } from "@/lib/types";
+import { seedState } from "./seed";
+import type { StudioState } from "./types";
 
-export function normalizeStudio(raw: StudioState): StudioState {
-  const seed = seedState();
-  const team = [...(raw.team ?? [])];
-  for (const person of seed.team) {
-    if (!team.some((p) => p.id === person.id)) team.push(person);
+export function normalizeStudio(raw: StudioState | null): StudioState {
+  if (!raw || !Array.isArray(raw.projects) || !Array.isArray(raw.companies)) {
+    return seedState();
   }
-  const studioName =
-    !raw.studioName || raw.studioName === "Suresh Studio"
-      ? "Akaai Spaces"
-      : raw.studioName;
-  const videoJobs =
-    raw.videoJobs && raw.videoJobs.length > 0 ? raw.videoJobs : seed.videoJobs;
+  const seed = seedState();
   return {
     ...seed,
     ...raw,
-    studioName,
-    team,
-    videoJobs,
+    studioName: raw.studioName || "Akaai Spaces",
+    team: raw.team?.length ? raw.team : seed.team,
+    companies: raw.companies,
+    projects: raw.projects,
+    campaigns: raw.campaigns ?? [],
+    deliverables: raw.deliverables ?? [],
+    invoices: raw.invoices ?? [],
+    videoJobs: raw.videoJobs ?? seed.videoJobs,
   };
 }

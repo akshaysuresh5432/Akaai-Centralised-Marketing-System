@@ -1,64 +1,57 @@
-import { isPast, sameDay } from "./dates";
 import type { StudioState } from "./types";
 
-export function person(state: StudioState, id?: string) {
-  return state.team.find((p) => p.id === id);
+export function company(state: StudioState, id?: string) {
+  return state.companies.find((c) => c.id === id);
 }
 
-export function client(state: StudioState, id?: string) {
-  return state.clients.find((c) => c.id === id);
+export function project(state: StudioState, id?: string) {
+  return state.projects.find((p) => p.id === id);
 }
 
 export function campaign(state: StudioState, id?: string) {
   return state.campaigns.find((c) => c.id === id);
 }
 
-export function dayDeliverables(state: StudioState, iso: string) {
-  return state.deliverables
-    .filter((d) => sameDay(d.date, iso))
-    .sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
+export function person(state: StudioState, id?: string) {
+  return state.team.find((p) => p.id === id);
 }
 
-export function dayTasks(state: StudioState, iso: string) {
-  return state.tasks.filter((t) => sameDay(t.dueDate, iso));
-}
+export type ReminderKind = "publish" | "invoice";
 
-export function dayMilestones(state: StudioState, iso: string) {
-  return state.milestones.filter((m) => sameDay(m.date, iso));
-}
+export type Reminder = {
+  id: string;
+  kind: ReminderKind;
+  date: string;
+  title: string;
+  companyId: string;
+  ownerId: string;
+  href: string;
+  amount?: string;
+};
 
-export function overdueTasks(state: StudioState, iso: string) {
-  return state.tasks.filter(
-    (t) => t.status !== "done" && isPast(t.dueDate, iso)
-  );
-}
-
-export function approvals(state: StudioState) {
-  return state.deliverables.filter((d) =>
-    ["internal-review", "client-review"].includes(d.status)
-  );
-}
-
-export function myOpenWork(state: StudioState, userId: string) {
-  return {
-    tasks: state.tasks.filter(
-      (t) => t.assigneeId === userId && t.status !== "done"
-    ),
-    deliverables: state.deliverables.filter(
-      (d) =>
-        d.assigneeId === userId &&
-        !["live", "reported"].includes(d.status)
-    ),
-  };
-}
-
-export function loadForPerson(state: StudioState, userId: string) {
-  const openTasks = state.tasks.filter(
-    (t) => t.assigneeId === userId && t.status !== "done"
-  ).length;
-  const openDeliverables = state.deliverables.filter(
-    (d) =>
-      d.assigneeId === userId && !["live", "reported"].includes(d.status)
-  ).length;
-  return openTasks + openDeliverables;
+export function reminders(state: StudioState): Reminder[] {
+  const pubs: Reminder[] = state.deliverables
+    .filter((d) => !d.done)
+    .map((d) => ({
+      id: d.id,
+      kind: "publish" as const,
+      date: d.publishDate,
+      title: d.title,
+      companyId: d.companyId,
+      ownerId: d.ownerId,
+      href: `/companies/${d.companyId}`,
+    }));
+  const inv: Reminder[] = state.invoices
+    .filter((i) => !i.paid)
+    .map((i) => ({
+      id: i.id,
+      kind: "invoice" as const,
+      date: i.date,
+      title: i.title,
+      companyId: i.companyId,
+      ownerId: i.ownerId,
+      href: `/companies/${i.companyId}`,
+      amount: i.amount,
+    }));
+  return [...pubs, ...inv].sort((a, b) => a.date.localeCompare(b.date));
 }
