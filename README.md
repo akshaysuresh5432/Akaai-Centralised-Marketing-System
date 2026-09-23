@@ -41,6 +41,8 @@ Build settings (also in `netlify.toml`):
 - Publish directory: `.next`
 - Node: 22
 
+In **Site configuration → Build & deploy → Build settings**, the publish directory must be `.next` (not `public` or `/`). If you still see Netlify’s “Page not found”, trigger **Clear cache and retry deploy** after this config is on `main`.
+
 Every push to `main` rebuilds the site. Send staff the `*.netlify.app` URL. They set **Working as** to their name.
 
 On Netlify, video files must stay under **45 MB** each. Larger cuts: compress or split before upload.
