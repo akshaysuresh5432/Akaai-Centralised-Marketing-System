@@ -26,3 +26,22 @@ npm run dev
 ```
 
 Open [http://localhost:43211](http://localhost:43211).
+
+## Deploy on Netlify (staff URL)
+
+The GitHub repo is connected for Netlify:
+
+https://github.com/akshaysuresh5432/Akaai-Centralised-Marketing-System
+
+In Netlify: **Add new site → Import from Git → GitHub → Akaai-Centralised-Marketing-System**.
+
+Build settings (also in `netlify.toml`):
+
+- Build command: `npm run build`
+- Publish directory: `.next`
+- Node: 22
+
+Every push to `main` rebuilds the site. Send staff the `*.netlify.app` URL. They set **Working as** to their name.
+
+On Netlify, video files must stay under **45 MB** each. Larger cuts: compress or split before upload.
+

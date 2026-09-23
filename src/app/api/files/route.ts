@@ -13,8 +13,15 @@ export async function POST(request: Request) {
   if (!(file instanceof File)) {
     return Response.json({ error: "No file" }, { status: 400 });
   }
-  if (file.size > 600 * 1024 * 1024) {
-    return Response.json({ error: "File is over 600 MB" }, { status: 413 });
+  if (file.size > (process.env.NETLIFY ? 45 : 600) * 1024 * 1024) {
+    return Response.json(
+      {
+        error: process.env.NETLIFY
+          ? "On Netlify, each file must be under 45 MB. Zip large cuts or split them."
+          : "File is over 600 MB",
+      },
+      { status: 413 }
+    );
   }
   const id = uid("file");
   const bytes = Buffer.from(await file.arrayBuffer());

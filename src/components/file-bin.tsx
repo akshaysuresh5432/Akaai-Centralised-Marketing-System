@@ -76,7 +76,7 @@ export function FileBin({
           {busy ? "Uploading…" : "Drop files here, or click to choose"}
         </span>
         <span className="mt-1 text-xs text-muted-foreground">
-          Video, audio, stills — up to 600 MB each
+          Video, audio, stills — up to 45 MB on the live site, 600 MB locally
         </span>
         <input
           type="file"
